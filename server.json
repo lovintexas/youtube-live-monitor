@@ -1,0 +1,9 @@
+{
+  "name": "YouTube Live Monitor",
+  "type": "python3",
+  "executable": "youtube_live.py",
+  "description": "Monitor YouTube incoming video and livestream broadcast status in IoX",
+  "notice": "Authorize your YouTube account to monitor livestream status",
+  "shortPoll": 30,
+  "longPoll": 300
+}

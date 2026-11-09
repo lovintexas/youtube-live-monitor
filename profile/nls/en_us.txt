@@ -1,0 +1,16 @@
+ND-youtubectrl-NAME = YouTube Live Monitor
+ND-youtubectrl-ICON = GenericCtl
+
+ST-youtubectrl-ST-NAME = YouTube Receiving Video
+ST-youtubectrl-GV1-NAME = Broadcast Status
+ST-youtubectrl-GV2-NAME = API Connected
+
+CMD-youtubectrl-QUERY-NAME = Query
+CMD-youtubectrl-CHECK-NAME = Check Now
+
+YTBOOLEAN-0 = No
+YTBOOLEAN-1 = Yes
+
+YTBROADCAST-0 = Offline
+YTBROADCAST-1 = Scheduled
+YTBROADCAST-2 = Live

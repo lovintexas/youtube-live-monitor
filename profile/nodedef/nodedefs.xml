@@ -1,0 +1,16 @@
+<nodeDefs>
+  <nodeDef id="youtubectrl" nls="youtubectrl">
+    <sts>
+      <st id="ST" editor="ytboolean"/>
+      <st id="GV1" editor="ytbroadcast"/>
+      <st id="GV2" editor="ytboolean"/>
+    </sts>
+    <cmds>
+      <sends/>
+      <accepts>
+        <cmd id="QUERY"/>
+        <cmd id="CHECK"/>
+      </accepts>
+    </cmds>
+  </nodeDef>
+</nodeDefs>

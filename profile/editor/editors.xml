@@ -1,0 +1,8 @@
+<editors>
+  <editor id="ytboolean">
+    <range uom="25" subset="0-1" nls="YTBOOLEAN"/>
+  </editor>
+  <editor id="ytbroadcast">
+    <range uom="25" subset="0-2" nls="YTBROADCAST"/>
+  </editor>
+</editors>
