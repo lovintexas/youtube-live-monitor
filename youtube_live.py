@@ -4,15 +4,15 @@
 import threading
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 import udi_interface
 from youtube_monitor import check_stream
+from youtube_oauth import YouTubeOAuth, install_oauth_log_filter
 
 LOGGER = udi_interface.LOGGER
-AUTH_DIRECTORY = Path(__file__).resolve().parent / "persist"
 
 controller = None
+youtube_oauth = None
 
 
 class YouTubeController(udi_interface.Node):
@@ -53,7 +53,11 @@ class YouTubeController(udi_interface.Node):
 
     def _check_worker(self):
         try:
-            result = check_stream(AUTH_DIRECTORY)
+            token = youtube_oauth.getAccessToken()
+            if not token:
+                raise RuntimeError("YouTube authentication required")
+
+            result = check_stream(access_token=token)
 
             receiving = 2 if result["receiving"] else 1
 
@@ -111,6 +115,8 @@ def poll_handler(poll_type):
 
 def stop_handler():
     LOGGER.info("YouTube Live Monitor stopping")
+    if youtube_oauth is not None:
+        youtube_oauth.shutdown()
     polyglot.stop()
 
 
@@ -121,6 +127,16 @@ if __name__ == "__main__":
 
         polyglot.subscribe(polyglot.POLL, poll_handler)
         polyglot.subscribe(polyglot.STOP, stop_handler)
+
+        install_oauth_log_filter()
+        youtube_oauth = YouTubeOAuth(polyglot)
+
+        polyglot.subscribe(
+            polyglot.CUSTOMNS, youtube_oauth.customNsHandler
+        )
+        polyglot.subscribe(
+            polyglot.OAUTH, youtube_oauth.oauthHandler
+        )
 
         polyglot.ready()
         polyglot.updateProfile()
