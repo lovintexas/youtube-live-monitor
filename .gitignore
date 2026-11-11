@@ -2,3 +2,9 @@ persist/
 __pycache__/
 *.pyc
 .venv/
+logs/
+*.log
+*.key
+*.cert
+*.lock
+*.pid

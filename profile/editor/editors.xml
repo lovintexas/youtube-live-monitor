@@ -1,8 +1,14 @@
 <editors>
-  <editor id="ytboolean">
-    <range uom="25" subset="0-1" nls="YTBOOLEAN"/>
+  <editor id="ytvideo">
+    <range uom="25" subset="0-2" nls="YTVIDEO"/>
   </editor>
   <editor id="ytbroadcast">
-    <range uom="25" subset="0-2" nls="YTBROADCAST"/>
+    <range uom="25" subset="0-3" nls="YTBROADCAST"/>
+  </editor>
+  <editor id="ytapi">
+    <range uom="25" subset="0-2" nls="YTAPI"/>
+  </editor>
+  <editor id="ytnumber">
+    <range uom="56" min="-1" max="100000" step="1" prec="0"/>
   </editor>
 </editors>

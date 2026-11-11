@@ -3,14 +3,21 @@ ND-youtubectrl-ICON = GenericCtl
 
 ST-youtubectrl-ST-NAME = YouTube Receiving Video
 ST-youtubectrl-GV1-NAME = Broadcast Status
-ST-youtubectrl-GV2-NAME = API Connected
+ST-youtubectrl-GV2-NAME = API Connection
+ST-youtubectrl-GV3-NAME = Minutes Until Next Service
 
 CMD-youtubectrl-QUERY-NAME = Query
 CMD-youtubectrl-CHECK-NAME = Check Now
 
-YTBOOLEAN-0 = No
-YTBOOLEAN-1 = Yes
+YTVIDEO-0 = Unknown
+YTVIDEO-1 = No
+YTVIDEO-2 = Yes
 
-YTBROADCAST-0 = Offline
-YTBROADCAST-1 = Scheduled
-YTBROADCAST-2 = Live
+YTBROADCAST-0 = Unknown
+YTBROADCAST-1 = Offline
+YTBROADCAST-2 = Scheduled
+YTBROADCAST-3 = Live
+
+YTAPI-0 = Unknown
+YTAPI-1 = Error
+YTAPI-2 = Connected

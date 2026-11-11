@@ -1,9 +1,10 @@
 <nodeDefs>
   <nodeDef id="youtubectrl" nls="youtubectrl">
     <sts>
-      <st id="ST" editor="ytboolean"/>
+      <st id="ST" editor="ytvideo"/>
       <st id="GV1" editor="ytbroadcast"/>
-      <st id="GV2" editor="ytboolean"/>
+      <st id="GV2" editor="ytapi"/>
+      <st id="GV3" editor="ytnumber"/>
     </sts>
     <cmds>
       <sends/>

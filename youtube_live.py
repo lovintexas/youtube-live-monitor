@@ -2,15 +2,14 @@
 """YouTube Live Monitor for Universal Devices IoX."""
 
 import threading
-from pathlib import Path
 import time
-import udi_interface
+from datetime import datetime, timezone
+from pathlib import Path
 
+import udi_interface
 from youtube_monitor import check_stream
 
 LOGGER = udi_interface.LOGGER
-
-# Development only. Replace with plugin-private storage before deployment.
 AUTH_DIRECTORY = Path(__file__).resolve().parent / "persist"
 
 controller = None
@@ -23,6 +22,7 @@ class YouTubeController(udi_interface.Node):
         {"driver": "ST", "value": 0, "uom": 25},
         {"driver": "GV1", "value": 0, "uom": 25},
         {"driver": "GV2", "value": 0, "uom": 25},
+        {"driver": "GV3", "value": -1, "uom": 56},
     ]
 
     def __init__(self, polyglot):
@@ -34,6 +34,10 @@ class YouTubeController(udi_interface.Node):
         self.lock = threading.Lock()
 
     def start(self):
+        self.setDriver("ST", 0, report=True, force=True)
+        self.setDriver("GV1", 0, report=True, force=True)
+        self.setDriver("GV2", 0, report=True, force=True)
+        self.setDriver("GV3", -1, report=True, force=True)
         self.check_now()
 
     def check_now(self, command=None):
@@ -51,27 +55,41 @@ class YouTubeController(udi_interface.Node):
         try:
             result = check_stream(AUTH_DIRECTORY)
 
-            receiving = 1 if result["receiving"] else 0
+            receiving = 2 if result["receiving"] else 1
+
             broadcast = {
-                "offline": 0,
-                "scheduled": 1,
-                "live": 2,
+                "offline": 1,
+                "scheduled": 2,
+                "live": 3,
             }.get(result.get("broadcast"), 0)
 
-            self.setDriver("ST", receiving)
-            self.setDriver("GV1", broadcast)
-            self.setDriver("GV2", 1)
+            next_start = result.get("next_start")
+            minutes = -1
+
+            if next_start:
+                start = datetime.fromisoformat(next_start)
+                minutes = max(
+                    0,
+                    int((start - datetime.now(timezone.utc)).total_seconds()
+                        / 60)
+                )
+
+            self.setDriver("ST", receiving, uom=25)
+            self.setDriver("GV1", broadcast, uom=25)
+            self.setDriver("GV2", 2, uom=25)
+            self.setDriver("GV3", minutes, uom=56)
 
             LOGGER.info("YouTube status: %s", result)
 
         except Exception:
             LOGGER.exception("YouTube status check failed")
-            self.setDriver("GV2", 0)
+            self.setDriver("GV2", 1, uom=25)
 
         finally:
             with self.lock:
                 self.last_check = time.monotonic()
                 self.checking = False
+
 
     def poll(self):
         if time.monotonic() - self.last_check >= 30:
@@ -101,8 +119,8 @@ if __name__ == "__main__":
         polyglot = udi_interface.Interface([])
         polyglot.start("0.1.0")
 
-        polyglot.subscribe(udi_interface.POLL, poll_handler)
-        polyglot.subscribe(udi_interface.STOP, stop_handler)
+        polyglot.subscribe(polyglot.POLL, poll_handler)
+        polyglot.subscribe(polyglot.STOP, stop_handler)
 
         polyglot.ready()
         polyglot.updateProfile()
