@@ -32,6 +32,9 @@ class YouTubeController(udi_interface.Node):
         self.last_check = 0
         self.checking = False
         self.lock = threading.Lock()
+        self.scheduled_start = None
+        self.scheduled_id = None
+        self.zero_reported = False
 
     def start(self):
         self.setDriver("ST", 0, report=True, force=True)
@@ -68,15 +71,80 @@ class YouTubeController(udi_interface.Node):
             }.get(result.get("broadcast"), 0)
 
             next_start = result.get("next_start")
-            minutes = -1
+            next_id = result.get("next_id")
+            now = datetime.now(timezone.utc)
+            upcoming = datetime.fromisoformat(next_start) if next_start else None
 
-            if next_start:
-                start = datetime.fromisoformat(next_start)
-                minutes = max(
-                    0,
-                    int((start - datetime.now(timezone.utc)).total_seconds()
-                        / 60)
-                )
+            schedules = result.get("upcoming_schedules", {})
+            upcoming_ids = set(result.get("upcoming_ids", []))
+            active_ids = set(result.get("active_ids", []))
+
+            with self.lock:
+                current = self.scheduled_start
+                current_id = self.scheduled_id
+
+                if current_id is None:
+                    current = upcoming
+                    current_id = next_id
+                    self.scheduled_start = current
+                    self.scheduled_id = current_id
+                    self.zero_reported = False
+
+                elif current_id in schedules:
+                    current = datetime.fromisoformat(
+                        schedules[current_id].replace("Z", "+00:00")
+                    )
+                    self.scheduled_start = current
+
+                elif current_id in active_ids:
+                    # The broadcast is now active. Preserve its
+                    # scheduled start until zero has been reported.
+                    pass
+
+                elif (
+                    current is not None
+                    and abs((current - now).total_seconds()) <= 60
+                ):
+                    # Allow a brief transition between upcoming
+                    # and active without skipping countdown zero.
+                    pass
+
+                elif current_id not in active_ids:
+                    # If the scheduled start has passed, report
+                    # zero once before advancing to another event.
+                    if current is not None and current <= now:
+                        # Preserve the existing zero_reported flag.
+                        # The countdown logic below handles advancing.
+                        pass
+                    else:
+                        # Disappeared before its scheduled start:
+                        # treat as canceled.
+                        current = upcoming
+                        current_id = next_id
+                        self.scheduled_start = current
+                        self.scheduled_id = current_id
+                        self.zero_reported = False
+
+                if current is None:
+                    minutes = -1
+                else:
+                    seconds = (current - now).total_seconds()
+
+                    if seconds <= -60 and self.zero_reported:
+                        current = upcoming
+                        self.scheduled_start = upcoming
+                        self.scheduled_id = next_id
+                        self.zero_reported = False
+                        minutes = (
+                            max(0, int((current - now).total_seconds() / 60))
+                            if current else -1
+                        )
+
+                    else:
+                        minutes = max(0, int((seconds + 29.999) / 60))
+
+                    if minutes == 0:
+                        self.zero_reported = True
 
             self.setDriver("ST", receiving, uom=25)
             self.setDriver("GV1", broadcast, uom=25)
@@ -96,7 +164,21 @@ class YouTubeController(udi_interface.Node):
 
 
     def poll(self):
-        if time.monotonic() - self.last_check >= 30:
+        now = datetime.now(timezone.utc)
+
+        with self.lock:
+            scheduled = self.scheduled_start
+            elapsed = time.monotonic() - self.last_check
+
+        interval = 60
+
+        if scheduled is not None:
+            seconds = (scheduled - now).total_seconds()
+
+            if -60 <= seconds <= 300:
+                interval = 10
+
+        if elapsed >= interval:
             self.check_now()
 
     def query(self, command=None):
@@ -123,7 +205,7 @@ def stop_handler():
 if __name__ == "__main__":
     try:
         polyglot = udi_interface.Interface([])
-        polyglot.start("0.1.0")
+        polyglot.start("0.1.1")
 
         polyglot.subscribe(polyglot.POLL, poll_handler)
         polyglot.subscribe(polyglot.STOP, stop_handler)
